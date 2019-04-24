@@ -1,8 +1,14 @@
 ﻿using System;
 using System.IO;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 
+public struct Point
+{
+    public double x {get;set;}
+    public double y {get;set;}
 
+}
 public class utils
 {
     static public Dictionary<string, string> argparse(string [] args)
@@ -64,8 +70,41 @@ class Program
             return 1;
         }
 
-        utils.reader(files["-i"]);
+        var lines = utils.reader(files["-i"]);
+
+        // // var pattern = @"(.*?)";
+        // var pattern = @"\[.*\((.*\))\]";
+
+        // var matches = Regex.Matches(lines[0], pattern);
+        // Console.WriteLine(matches.Count);
+        // foreach (Match m in matches)
+        // {
+        //     Console.WriteLine(m.Groups[1].Value);
+        // }
         
+        var l_p = new List<string>();
+
+        var fst = lines[0];
+        // foreach (string p in fst.Split('(', ')'))
+        //     Console.WriteLine(p.TrimEnd('\r','\n'));
+
+        while (fst.Contains("("))
+        {
+            var p = fst.Split('(', ')')[1];
+            fst = fst.Replace("(" + p + ")", "");
+            l_p.Add(p);
+        }
+
+        var points = new List<Point>();
+        foreach ( string p in l_p)
+        {
+            var pp = p.Split(',');
+            // points.Add(new Point().x);
+            
+            Console.WriteLine(p);
+        }
+
+
         
 
         return 0;
