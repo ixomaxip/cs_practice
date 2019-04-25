@@ -9,6 +9,7 @@ public struct Point
     public double y {get;set;}
 
 }
+
 public class utils
 {
     static public Dictionary<string, string> argparse(string [] args)
@@ -50,7 +51,16 @@ public class utils
 
         return lines;
     }
+
 }
+static public class test_data
+    {
+        static public int size = 3;
+        static public double[] xVals = { 0.4, 0.65, 0.73};
+        static public double[] yVals =  {1.5, 2.35, 2.2};
+        static public double[] fVals =  {1.7, 2.2, 3.7};
+
+    }
 
 class Program
 {
@@ -71,23 +81,10 @@ class Program
         }
 
         var lines = utils.reader(files["-i"]);
-
-        // // var pattern = @"(.*?)";
-        // var pattern = @"\[.*\((.*\))\]";
-
-        // var matches = Regex.Matches(lines[0], pattern);
-        // Console.WriteLine(matches.Count);
-        // foreach (Match m in matches)
-        // {
-        //     Console.WriteLine(m.Groups[1].Value);
-        // }
         
         var l_p = new List<string>();
 
         var fst = lines[0];
-        // foreach (string p in fst.Split('(', ')'))
-        //     Console.WriteLine(p.TrimEnd('\r','\n'));
-
         while (fst.Contains("("))
         {
             var p = fst.Split('(', ')')[1];
@@ -103,11 +100,37 @@ class Program
             
             Console.WriteLine(p);
         }
-
+        Console.WriteLine('\n');
 
         
 
+
+        foreach(double v in test_data.fVals)
+        {
+            Console.WriteLine(InterpLagr(v, test_data.yVals, test_data.xVals, test_data.size));
+        }
+
         return 0;
+    }
+
+    static double InterpLagr(double f, double[] xs, double[] ys, int n)
+    {
+        double lp = 0.0;
+
+        for (int i = 0; i < n; i++)
+        {
+            double a0 = 1;
+            for (int j = 0; j < n; j++)
+            {
+                if (j != i)
+                {
+                    a0 *= (f - xs[j])/(xs[i] - xs[j]);
+                }
+            }
+            lp += a0 * ys[i];
+        }
+
+        return lp;
     }
 
 }
