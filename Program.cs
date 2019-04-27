@@ -7,26 +7,94 @@ class Program
     static int Main(string[] args)
     {
         var files = argparse(args);
+        
+        Console.WriteLine("Read input data.");
         var lines = reader(files["-i"]);
         var points = points_parse(lines[0]);
         var fVals = fVals_parse(lines[1]);
 
-        foreach(var f in fVals)
+        //inverse interpolation
+        Interp.xs = points["ys"].ToArray();
+        Interp.ys = points["xs"].ToArray();
+
+        using (System.IO.StreamWriter fs = 
+            new System.IO.StreamWriter(files["-o"]))
         {
-            Console.WriteLine(f);
+            Console.WriteLine("Start interpolation");
+            foreach(var v in fVals)
+            {
+                fs.WriteLine(Interp.Lagrange(v));
+            }
+
         }
-
-        foreach(var p in points["xs"].ToArray())
-            Console.WriteLine(p);
-
-        Console.WriteLine('\n');
-
-        foreach(double v in test_data.fVals)
-        {
-            Console.WriteLine(InterpLagr(v, test_data.yVals, test_data.xVals, test_data.size));
-        }
+        Console.WriteLine("All done.");
 
         return 0;
+    }
+    static public Dictionary<string, string> argparse(string [] args)
+    {
+        var files = new Dictionary<string, string>();
+
+        if (args.Length == 4)
+        {
+            files.Add(args[0], args[1]);
+            files.Add(args[2], args[3]);           
+        }
+        else
+            throw new System.Exception("There is no input and output!");
+
+        if (!files.ContainsKey("-i") || !files.ContainsKey("-o"))
+            throw new System.Exception("There is no keys required. Example: -i input_file -o output_file");
+
+        return files;
+    }
+
+    static public string [] reader(string filename)
+    {
+        var lines = new string[] {};
+        try
+        {
+            lines = File.ReadAllLines(filename, System.Text.Encoding.UTF8);
+            if (lines.Length < 2)
+            {
+                throw new System.Exception("Not enough lines in input file!");
+            }
+        }
+        catch(Exception err)
+        {
+            Console.WriteLine(err.Message);
+        }
+
+        return lines;
+    }
+
+    static Dictionary<string, List<double>> points_parse(string line)
+    {
+        var points = new Dictionary<string, List<double>>();
+
+        var xs = new List<double>();
+        var ys = new List<double>();
+
+        while (line.Contains("("))
+        {
+            var p = line.Split('(', ')')[1];
+            line = line.Replace("(" + p + ")", "");
+            var p_splitted = p.Split(',');
+            try
+            {
+                xs.Add(double.Parse(p_splitted[0]));
+                ys.Add(double.Parse(p_splitted[1]));
+            }
+            catch(Exception err)
+            {
+                Console.WriteLine("Error: {0}", err.Message);
+            }
+        }
+
+        points.Add("xs", xs);
+        points.Add("ys", ys);
+
+        return points;
     }
 
     static List<double> fVals_parse(string line)
@@ -47,93 +115,29 @@ class Program
 
         return fVals;
     }
-
-    static Dictionary<string, List<double>> points_parse(string line)
+    static public class Interp
     {
-        var points = new Dictionary<string, List<double>>();
-
-        var xs = new List<double>();
-        var ys = new List<double>();
-
-        // var fst = lines[0];
-        while (line.Contains("("))
+        static public double[] xs;
+        static public double[] ys;
+        static public double Lagrange(double f)
         {
-            var p = line.Split('(', ')')[1];
-            line = line.Replace("(" + p + ")", "");
-            var p_splitted = p.Split(',');
-            try
+            if (xs.Length != ys.Length)
+                throw new System.Exception("There is different lengths for x and y arrays.");
+
+            double lp = 0.0;
+            for (int i = 0; i < ys.Length; i++)
             {
-                xs.Add(double.Parse(p_splitted[0]));
-                ys.Add(double.Parse(p_splitted[1]));
+                double a0 = 1;
+                for (int j = 0; j < xs.Length; j++)
+                {
+                    if (j != i)
+                        a0 *= (f - xs[j])/(xs[i] - xs[j]);
+                }
+                lp += a0 * ys[i];
             }
-            catch(Exception err)
-            {
-                Console.WriteLine("Error: {0}", err.Message);
-            }
-        }
-        points.Add("xs", xs);
-        points.Add("ys", ys);
-        return points;
-    }
 
-    static double InterpLagr(double f, double[] xs, double[] ys, int n)
-    {
-        double lp = 0.0;
-        for (int i = 0; i < n; i++)
-        {
-            double a0 = 1;
-            for (int j = 0; j < n; j++)
-            {
-                if (j != i)
-                    a0 *= (f - xs[j])/(xs[i] - xs[j]);
-            }
-            lp += a0 * ys[i];
+            return lp;
         }
-
-        return lp;
-    }
-    static public Dictionary<string, string> argparse(string [] args)
-    {
-        var files = new Dictionary<string, string>();
-
-        if (args.Length == 4)
-        {
-            files.Add(args[0], args[1]);
-            files.Add(args[2], args[3]);           
-        }
-        else
-            throw new System.Exception("There is no input and output!");
-
-        try
-        {
-            Console.WriteLine("Input: {0}", files["-i"]);
-            Console.WriteLine("Output: {0}", files["-o"]);
-        }
-        catch(Exception err)
-        {
-            Console.WriteLine("Error: {0}", err.Message);
-            return null;
-        }
-
-        return files;
-    }
-    static public string [] reader(string filename)
-    {
-        var lines = new string[] {};
-        try
-        {
-            lines = File.ReadAllLines(filename, System.Text.Encoding.UTF8);
-            if (lines.Length < 2)
-            {
-                throw new System.Exception("Not enough lines in input file!");
-            }
-        }
-        catch(Exception err)
-        {
-            Console.WriteLine(err.Message);
-        }
-
-        return lines;
     }
 
     static public class test_data
